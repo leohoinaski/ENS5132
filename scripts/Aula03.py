@@ -104,3 +104,13 @@ print(matRand4D.mean()) #   Média da matriz inteira
 
 print(matRand4D.max(axis=0))
 maxMat4D = matRand4D.max(axis=0)
+
+#%% Pandas DataFrame
+
+# Dados vieram de: https://energiaeambiente.org.br/produto/plataforma-da-qualidade-do-ar
+df = pd.read_csv(r"C:\Users\Leonardo.Hoinaski\Documents\ENS5132\data\MQAR\SP\SP201501.csv",
+                 encoding='Latin1')
+
+df.describe()
+df.info()
+df[df.Poluente=='MP10'].Valor.plot()
