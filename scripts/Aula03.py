@@ -114,3 +114,6 @@ df = pd.read_csv(r"C:\Users\Leonardo.Hoinaski\Documents\ENS5132\data\MQAR\SP\SP2
 df.describe()
 df.info()
 df[df.Poluente=='MP10'].Valor.plot()
+pd.to_datetime(df.Data,format='%Y-%m-%d')
+
+
