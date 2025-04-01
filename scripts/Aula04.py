@@ -171,10 +171,7 @@ stationDf['hour'] = horaDf
 
 
 # Corrigindo a coluna datetime
-stationDf['datetime'] = pd.to_datetime(stationDf.astype(str).year+
-                                       stationDf.astype(str).month+
-                                       stationDf.astype(str).day+
-                                       stationDf.astype(str).hour,
-                                       format='%Y%m%d%H')
+stationDf['datetime'] = pd.to_datetime(
+    stationDf[['year', 'month','day','hour']],format='%Y%m%d %H')
 
 
