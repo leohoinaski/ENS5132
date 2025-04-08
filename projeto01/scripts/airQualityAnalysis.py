@@ -116,15 +116,39 @@ aqData['Season'][(aqData.month==9) | (aqData.month==10) |
 # Extrair o nome dos poluentes sem redundância
 pollutants = np.unique(aqData.Poluente)
 
-# Loop para cada poluente e extraindo as estatísticas básicas
-for pol in pollutants:
-    basicStat = aqData[aqData.Poluente==pol].describe()
-    basicStat.to_csv(r'C:\Users\Leonardo.Hoinaski\Documents\ENS5132\projeto01\ouputs'+
-                     '/basicStat')
+# lista de estações
+stations = np.unique(aqData.Estacao)
+
+# criando pasta para salvar os dado
+os.makedirs(r'C:\Users\Leonardo.Hoinaski\Documents\ENS5132\projeto01\outputs'
+                 +'/'+uf)
+
+# # Loop para cada poluente e extraindo as estatísticas básicas
+# for st in stations:
+#     print(st)
+#     statAll =[]
+#     for pol in pollutants:
+#         print(pol)
+#         basicStat = aqData['Valor'][(aqData.Poluente==pol) & 
+#                                     (aqData.Estacao==st)].describe()
+#         basicStat = pd.DataFrame(basicStat)
+#         basicStat.columns =[pol]
+#         statAll.append(basicStat)       
+    
+#     # Unindo as estatísticas por poluente
+#     dfmerge = pd.concat(statAll,axis=1)
+    
+#     # Salva as estatísticas por estação    
+#     dfmerge.to_csv(r'C:\Users\Leonardo.Hoinaski\Documents\ENS5132\projeto01\outputs'
+#                          +'/'+uf+'/basicStat_'+st+'.csv')
 
 
+# Estatística básica usando groupby
+statGroup = aqData.groupby(['Estacao','Poluente']).describe()
 
-
+# Salvando em csv
+statGroup.to_csv(r'C:\Users\Leonardo.Hoinaski\Documents\ENS5132\projeto01\outputs'
+                     +'/'+uf+'/basicStat_ALL.csv')
 
 
 
