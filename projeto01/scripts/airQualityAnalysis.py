@@ -116,7 +116,7 @@ def airQualityAnalysis(uf):
     
     # ---------------------Estatísticas básicas ----------------------------------
     # Extrair o nome dos poluentes sem redundância
-    pollutants = np.unique(aqData.Poluente)
+    #pollutants = np.unique(aqData.Poluente)
     
     # lista de estações
     stations = np.unique(aqData.Estacao)
@@ -152,6 +152,13 @@ def airQualityAnalysis(uf):
     statGroup.to_csv(r'C:\Users\Leonardo.Hoinaski\Documents\ENS5132\projeto01\outputs'
                          +'/'+uf+'/basicStat_ALL.csv')
     
+    # Coloca o índice da matriz como a coluna datetime
     aqData = aqData.set_index(pd.DatetimeIndex(aqData['datetime']))
+    
+    # Criando uma tabela de dados com cada poluente em colunas diferentes.
+    aqTable = aqData.reset_index(drop=True).pivot_table(
+        columns='Poluente',
+        index=['Estacao','datetime'],
+        values='Valor')
 
-    return aqData, stations
+    return aqData, stations, aqTable

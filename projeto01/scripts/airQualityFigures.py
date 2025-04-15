@@ -31,6 +31,11 @@ def airQualityTimeSeries(aqData,stations,uf,repoPath):
         
         # Loop para cada poluente
         for ii, pol in enumerate(pollutants):
-            ax[ii].plot(
-                aqData[(aqData.Estacao==st) & (aqData.Poluente == pol)].Valor)
-            fig.savefig(repoPath+'/figuras/'+uf+'/plot_'+st+'.png')
+            if pollutants.size>1:
+                ax[ii].plot(
+                    aqData[(aqData.Estacao==st) & (aqData.Poluente == pol)].Valor)
+                fig.savefig(repoPath+'/figuras/'+uf+'/plot_'+st+'.png')
+            else:
+                ax.plot(
+                    aqData[(aqData.Estacao==st) & (aqData.Poluente == pol)].Valor)
+                fig.savefig(repoPath+'/figuras/'+uf+'/plot_'+st+'.png')

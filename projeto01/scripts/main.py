@@ -24,8 +24,11 @@ ufs = os.listdir(dataPath)
 # Loop para todos os estados
 for uf in ufs:
     
-    aqData, stations = airQualityAnalysis(uf)
+    aqData, stations, aqTable = airQualityAnalysis(uf)
     
     os.chdir(repoPath+'/scripts')
     #airQualityHist(aqData,stations,uf,repoPath)
     airQualityTimeSeries(aqData,stations,uf,repoPath)
+
+
+
