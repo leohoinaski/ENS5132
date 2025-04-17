@@ -139,7 +139,7 @@ def univariateStatistics(aqTable,stations,uf,repoPath):
                 # Gerar figuras das tendÊncias
                 trendFigures(aqTableAlvo.groupby(pd.PeriodIndex(
                     aqTableAlvo['datetime'], freq="A"))[pol].median(),result)
-                msi = markham_index(aqTableAlvo[pol])
+                msi = markham_index(aqTableAlvo[pol].dropna())
                 MarkhamIndex.append(msi)
                 print(f"Markham Seasonality Index: {msi:.2f}")
 
@@ -157,7 +157,7 @@ def univariateStatistics(aqTable,stations,uf,repoPath):
                 st.append(stationAlvo)
                 pols.append(pol)
                 
-                msi = markham_index(aqTableAlvo[pol])
+                msi = markham_index(aqTableAlvo[pol].dropna())
                 MarkhamIndex.append(msi)
                 print(f"Markham Seasonality Index: {msi:.2f}")
             
