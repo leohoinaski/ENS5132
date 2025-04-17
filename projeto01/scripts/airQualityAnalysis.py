@@ -31,13 +31,13 @@ import numpy as np
 import os
 
 
-def airQualityAnalysis(uf):
+def airQualityAnalysis(uf,repoPath):
     # -------------------------- Abrir os dados -----------------------------------
     # Criando variável com o nome do estado
     #uf = 'SP'
     
     # Definindo o caminho para a pasta de dados
-    dataDir = r"C:\Users\Leonardo.Hoinaski\Documents\ENS5132\projeto01\inputs" +'/'+ uf
+    dataDir = repoPath+'/inputs/'+ uf
     
     # Lista de arquivos dentro da pasta
     dataList = os.listdir(dataDir)
@@ -122,8 +122,7 @@ def airQualityAnalysis(uf):
     stations = np.unique(aqData.Estacao)
     
     # criando pasta para salvar os dado
-    os.makedirs(r'C:\Users\Leonardo.Hoinaski\Documents\ENS5132\projeto01\outputs'
-                     +'/'+uf,exist_ok=True)
+    os.makedirs(repoPath+'/outputs/'+uf,exist_ok=True)
     
     # # Loop para cada poluente e extraindo as estatísticas básicas
     # for st in stations:
@@ -149,8 +148,7 @@ def airQualityAnalysis(uf):
     statGroup = aqData.groupby(['Estacao','Poluente']).describe()
     
     # Salvando em csv
-    statGroup.to_csv(r'C:\Users\Leonardo.Hoinaski\Documents\ENS5132\projeto01\outputs'
-                         +'/'+uf+'/basicStat_ALL.csv')
+    statGroup.to_csv(repoPath+'/outputs/'+uf+'/basicStat_ALL.csv')
     
     # Coloca o índice da matriz como a coluna datetime
     aqData = aqData.set_index(pd.DatetimeIndex(aqData['datetime']))
