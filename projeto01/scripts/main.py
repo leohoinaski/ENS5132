@@ -35,7 +35,7 @@ for uf in ufs:
     
     os.chdir(repoPath+'/scripts')
     #airQualityHist(aqData,stations,uf,repoPath)
-    airQualityTimeSeries(aqData,stations,uf,repoPath)
+    #airQualityTimeSeries(aqData,stations,uf,repoPath)
     univariateStatistics(aqTable,stations,uf,repoPath)
 
 

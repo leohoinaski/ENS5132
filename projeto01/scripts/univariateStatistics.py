@@ -13,7 +13,10 @@ import pymannkendall as mk
 from statsmodels.tsa.seasonal import seasonal_decompose
 import pandas as pd
 from airQualityFigures import normalityCheck, trendFigures,timeSeriesForecast
+from datetime import datetime
 # Análise de sazonalidade
+import warnings
+warnings.filterwarnings('ignore')
 
 def markham_index(monthly_values):
     """
@@ -26,10 +29,10 @@ def markham_index(monthly_values):
     float: Markham Index (0 to 100)
     """
     monthly_values = np.array(monthly_values)
-    mean_value = np.mean(monthly_values)
+    mean_value = np.nanmean(monthly_values)
     
-    numerator = np.sum(np.abs(monthly_values - mean_value))
-    denominator = 2 * np.sum(monthly_values)
+    numerator = np.nansum(np.abs(monthly_values - mean_value))
+    denominator = 2 * np.nansum(monthly_values)
     
     msi = (numerator / denominator) * 100
     return msi
@@ -90,6 +93,7 @@ def univariateStatistics(aqTable,stations,uf,repoPath):
     
     #loop em todas as estações
     for stationAlvo in stations:
+        print(stationAlvo+'==========')
         #stationAlvo = stations[0]
         
         # Criando novo aqTable com colunas de datetime e Estacao
@@ -107,10 +111,29 @@ def univariateStatistics(aqTable,stations,uf,repoPath):
         
         #Loop para cada poluente
         for ii, pol in enumerate(pollutants):
+            print(pol + '------------')
+            
+            # Indice de Markham mensal
+            dataDecomposeMonthly = aqTableAlvo.groupby(
+                pd.PeriodIndex(aqTableAlvo['datetime'], freq="M"))[pol].agg(np.nanmean)
+            
+            # Gerando um PeriodIndex completo no intervalo desejado
+            full_index = pd.period_range(
+                start=datetime(int(pd.DatetimeIndex(dataDecomposeMonthly.index.to_timestamp()).year.min()),1,1),
+                end=datetime(int(pd.DatetimeIndex(dataDecomposeMonthly.index.to_timestamp()).year.max()),12,31),
+                freq='M')
+
+            # Reindexando para preencher os períodos faltantes com NaN
+            complete_data = dataDecomposeMonthly.reindex(full_index)
+            
+            
             
             # chama a função que cria a figura no scrip airQualityFigures para gerar
             # Histogramas com transformações
             # normalityCheck(aqTableAlvo,repoPath,uf,stationAlvo,pol)
+            
+            
+            # Decomposição e previsão
             try:
                 res,complete_data=timeSeriesDecompose(aqTableAlvo,pol,uf,repoPath,stationAlvo)
                 timeSeriesForecast(complete_data,repoPath,uf,pol,stationAlvo)
@@ -123,7 +146,7 @@ def univariateStatistics(aqTable,stations,uf,repoPath):
             try:
                 result = mk.original_test(aqTableAlvo.groupby(pd.PeriodIndex(
                     aqTableAlvo['datetime'], freq="A"))[pol].median())              
-                print(result)
+                #print(result)
                 trend.append(result.trend)
                 h.append(result.h)
                 p.append(result.p)
@@ -135,15 +158,14 @@ def univariateStatistics(aqTable,stations,uf,repoPath):
                 intercept.append(result.intercept)
                 st.append(stationAlvo)
                 pols.append(pol)
+                msi = markham_index(complete_data)
+                MarkhamIndex.append(msi)
+                print(f"Markham Seasonality Index: {msi:.2f}")
                 
                 # Gerar figuras das tendÊncias
                 trendFigures(aqTableAlvo.groupby(pd.PeriodIndex(
                     aqTableAlvo['datetime'], freq="A"))[pol].median(),result)
-                msi = markham_index(aqTableAlvo[pol].dropna())
-                MarkhamIndex.append(msi)
-                print(f"Markham Seasonality Index: {msi:.2f}")
-
-        
+                
             except:
                 trend.append(np.nan)
                 h.append(np.nan)
@@ -156,12 +178,8 @@ def univariateStatistics(aqTable,stations,uf,repoPath):
                 intercept.append(np.nan)
                 st.append(stationAlvo)
                 pols.append(pol)
-                
-                msi = markham_index(aqTableAlvo[pol].dropna())
-                MarkhamIndex.append(msi)
-                print(f"Markham Seasonality Index: {msi:.2f}")
-            
-        
+                MarkhamIndex.append(np.nan)
+
     
     # Preenchendo o dataframe com os dados do teste de tendência para cada estação
     univariateStats = pd.DataFrame({'station':st,
