@@ -14,7 +14,8 @@ from shapely.geometry import Point
 import pandas as pd
 import matplotlib.pyplot as plt
 import folium
-
+import contextily as cx
+import rasterio as rio
 
 # Caminho para o arquivo com o shapefile dos municípios
 munPath = r"C:\Users\Leonardo.Hoinaski\Documents\ENS5132\projeto02\inputs\BR_Municipios_2024\BR_Municipios_2024.shp"
@@ -93,10 +94,70 @@ print(porcentagemMonitorada)
 # Unindo geometrias
 geoUnion = gpd.sjoin(geoMun,gdf,how='inner')
 
+# Figura com mapa de fundo
+ax = gdf.to_crs('epsg:3857').plot(column=gdf['ESTADO'],figsize=(10, 10), alpha=0.5, edgecolor="k")
+cx.add_basemap(ax, source=cx.providers.Esri.WorldPhysical)
 
 
+#%% Análise usando um raster
+
+#Caminho para o arquivo do mapbiomas
+mapBiomasPath = r"C:\Users\Leonardo.Hoinaski\Documents\ENS5132\projeto02\inputs\mapbiomas_10m_collection2_integration_v1-classification_2023 (2).tif"
+
+# Abrindo o arquivo utilizando o rasterio
+src = rio.open(mapBiomasPath)
+
+# Extraindo coordenadas dos pontos para uma lista
+gdfUnique = gdf.geometry.unique()
+coord_list = [(x,y) for x, y in zip(gdf.geometry.x, gdf.geometry.y)]
+
+# Amonstrando os pontos no raster do mapbiomas
+gdf['mapbiomas'] = [x[0] for x in src.sample(coord_list)]
+
+# Contagem de estações por uso do solo
+contaUso = gdf.groupby(['mapbiomas']).count()
+
+# Gráfico de barras com o uso do solo onde as estações estão instaladas
+fig, ax = plt.subplots()
+ax.bar(contaUso.index,contaUso.ESTADO)
 
 
+# Recortando para uma cidade 
+import rasterio.mask
+with rio.open(mapBiomasPath) as src:
+    out_image, out_transform = rasterio.mask.mask(src,
+                                             geoMun[geoMun.NM_MUN=='Florianópolis'].geometry,
+                                             crop=True)
+
+# Cuidado com o tamanho da figura
+fig,ax = plt.subplots()
+ax.pcolor(out_image[0,:,:])
 
 
+with rio.open(mapBiomasPath) as src:
+    out_image, out_transform = rasterio.mask.mask(src,
+                                             [gdf.iloc[0,:].buffer],
+                                             crop=True)
+
+
+top,height, width = out_image.shape #Find the height and width of the array
+
+import numpy as np
+#Two arrays with the same shape as the input array/raster, where each value is the x or y index of that cell
+cols, rows = np.meshgrid(np.arange(width), np.arange(height)) 
+
+# Extraindo coordenadas
+xs, ys = rasterio.transform.xy(out_transform, rows, cols) 
+
+# Cuidado com o tamanho da figura
+fig,ax = plt.subplots()
+ax.pcolor(xs.reshape(cols.shape),ys.reshape(cols.shape),out_image[0,:,:])
+
+
+gdfTarget = gdf.to_crs('epsg:4326')[gdf.index==0]
+
+# Figura com mapa de fundo
+ax = gdfTarget.plot(figsize=(10, 10), alpha=0.5, edgecolor="k")
+plt.pcolor(xs.reshape(cols.shape),ys.reshape(cols.shape),out_image[0,:,:],alpha=0.2)
+cx.add_basemap(ax, source=cx.providers.Esri.WorldPhysical)
 
