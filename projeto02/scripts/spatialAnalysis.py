@@ -13,9 +13,11 @@ import geopandas as gpd
 from shapely.geometry import Point
 import pandas as pd
 import matplotlib.pyplot as plt
-import folium
+#import folium
 import contextily as cx
 import rasterio as rio
+import rasterio.mask
+import rioxarray as riox
 
 # Caminho para o arquivo com o shapefile dos municípios
 munPath = r"C:\Users\Leonardo.Hoinaski\Documents\ENS5132\projeto02\inputs\BR_Municipios_2024\BR_Municipios_2024.shp"
@@ -108,7 +110,6 @@ mapBiomasPath = r"C:\Users\Leonardo.Hoinaski\Documents\ENS5132\projeto02\inputs\
 src = rio.open(mapBiomasPath)
 
 # Extraindo coordenadas dos pontos para uma lista
-gdfUnique = gdf.geometry.unique()
 coord_list = [(x,y) for x, y in zip(gdf.geometry.x, gdf.geometry.y)]
 
 # Amonstrando os pontos no raster do mapbiomas
@@ -123,41 +124,59 @@ ax.bar(contaUso.index,contaUso.ESTADO)
 
 
 # Recortando para uma cidade 
-import rasterio.mask
+# with rio.open(mapBiomasPath) as src:
+#     out_image, out_transform = rasterio.mask.mask(src,
+#                                              geoMun[geoMun.NM_MUN=='Florianópolis'].geometry,
+#                                              crop=True)
+
+# # Cuidado com o tamanho da figura
+# fig,ax = plt.subplots()
+# ax.pcolor(out_image[0,:,:])
+
+
 with rio.open(mapBiomasPath) as src:
-    out_image, out_transform = rasterio.mask.mask(src,
-                                             geoMun[geoMun.NM_MUN=='Florianópolis'].geometry,
-                                             crop=True)
-
-# Cuidado com o tamanho da figura
-fig,ax = plt.subplots()
-ax.pcolor(out_image[0,:,:])
-
-
-with rio.open(mapBiomasPath) as src:
+    crsOriginal = src.crs
+    print(crsOriginal.to_epsg())
     out_image, out_transform = rasterio.mask.mask(src,
                                              [gdf.iloc[0,:].buffer],
                                              crop=True)
+    # Extraindo propriedades do raster
+    out_meta = src.meta
+    out_meta.update({"driver": "GTiff",
+                 "height": out_image.shape[1],
+                 "width": out_image.shape[2],
+                 "transform": out_transform})
+    # Se conseguir recortar...
+    if out_meta:   
+        # Abre um novo arquvio e salva na pasta de outputs recortado
+        with rio.open('teste.tif', "w", **out_meta) as dest:
+            dest.write(out_image)
+    
 
 
-top,height, width = out_image.shape #Find the height and width of the array
+# Open the raster
+raster = riox.open_rasterio("teste.tif")
 
-import numpy as np
-#Two arrays with the same shape as the input array/raster, where each value is the x or y index of that cell
-cols, rows = np.meshgrid(np.arange(width), np.arange(height)) 
+# Reproject to EPSG:3857
+raster_3857 = raster.rio.reproject("EPSG:3857")
 
-# Extraindo coordenadas
-xs, ys = rasterio.transform.xy(out_transform, rows, cols) 
+# Save the reprojected raster
+#raster_3857.rio.to_raster("output_3857.tif")
 
 # Cuidado com o tamanho da figura
-fig,ax = plt.subplots()
-ax.pcolor(xs.reshape(cols.shape),ys.reshape(cols.shape),out_image[0,:,:])
+# fig,ax = plt.subplots()
+# ax.pcolor(xs.reshape(cols.shape),ys.reshape(cols.shape),out_image[0,:,:])
 
+# Selecionando primeiro ponto de monitoramento para plotar
+# Precisa converter para PseudoMercator para utilizar o Contextly
+gdfTarget = gdf.to_crs('epsg:3857')[gdf.index==0]
 
-gdfTarget = gdf.to_crs('epsg:4326')[gdf.index==0]
+#Sem converter
+gdfTarget = gdf[gdf.index==0]
 
 # Figura com mapa de fundo
 ax = gdfTarget.plot(figsize=(10, 10), alpha=0.5, edgecolor="k")
-plt.pcolor(xs.reshape(cols.shape),ys.reshape(cols.shape),out_image[0,:,:],alpha=0.2)
-cx.add_basemap(ax, source=cx.providers.Esri.WorldPhysical)
+raster.plot(ax=ax, alpha=0.1)
+#plt.pcolor(xs.reshape(cols.shape),ys.reshape(cols.shape),out_image[0,:,:],alpha=0.2)
+cx.add_basemap(ax, source=cx.providers.Esri.WorldPhysical, crs=gdfTarget.crs)
 
